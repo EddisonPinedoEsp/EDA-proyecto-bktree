@@ -1,0 +1,11 @@
+{
+  "normalization": {
+    "lowercase": true,
+    "strip_accents": false,
+    "min_word_length": 1,
+    "max_word_length": 30,
+    "allow_spanish_chars": true
+  },
+  "subsets": [1000, 5000, 10000, 50000, 100000, 500000, 1000000],
+  "seed": 42
+}

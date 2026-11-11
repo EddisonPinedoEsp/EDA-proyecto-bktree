@@ -1,0 +1,221 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{longtable}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue}
+
+\titleformat{\section}{\normalfont\Large\bfseries}{\thesection.}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.4em}{0.7em}
+
+\title{\textbf{Propuesta de Investigaci\'on} \\ \large Construcci\'on, extensi\'on y evaluaci\'on de un BK-Tree sobre el diccionario del espa\~nol}
+\author{Aaron Santamaria | Eddison Pinedo | Noe Paredes \\ Universidad de Ingenier\'ia y Tecnolog\'ia}
+\date{24 de septiembre de 2026}
+
+\begin{document}
+\maketitle
+
+\section{T\'itulo tentativo}
+
+\textbf{Sensibilidad del BK-Tree a la distribuci\'on de distancias en diccionarios naturales: construcci\'on, extensi\'on y evaluaci\'on emp\'irica sobre el espa\~nol.}
+
+\section{Motivaci\'on}
+
+El BK-Tree (Burkhard y Keller, 1973) es una de las primeras estructuras de datos dise\~nadas espec\'ificamente para b\'usqueda de mejor coincidencia (\emph{best-match}) sobre un espacio m\'etrico, y sigue siendo hoy la base de herramientas pr\'acticas de correcci\'on ortogr\'afica y b\'usqueda difusa de cadenas mediante distancia de Levenshtein. Sin embargo, el mismo art\'iculo  documenta que una fuerte variabilidad en su rendimiento seg\'un la relaci\'on entre el tama\~no del archivo y el tama\~no del espacio de claves: en sus experimentos con claves de 30 bits el algoritmo examina en promedio 70--77\% del archivo, mientras que con claves de 15 bits ese porcentaje baja a 13.4\%.
+
+Esta sensibilidad de BK-Tree en aplicaciones reales de procesamiento de lenguaje natural, donde las distancias de edici\'on entre palabras de un diccionario no se distribuyen de forma uniforme: la mayor\'ia de los pares de palabras comparten distancias peque\~nas (1 o 2 ediciones), lo que concentra las claves en pocos valores de $k$ y puede degradar la poda del \'arbol hacia una b\'usqueda casi exhaustiva. El espa\~nol, adem\'as, tiene rasgos morfol\'ogicos propios (flexi\'on verbal extensa, acentuaci\'on, diminutivos) que podr\'ian acentuar el efecto de agrupamiento respecto al ingl\'es, sobre el cual se ha estudiado m\'as extensamente el uso de BK-Trees en correctores ortogr\'aficos.
+
+\section{Trabajo relacionado}
+
+La búsqueda aproximada puede formularse sobre un espacio métrico $(\mathcal{X},d)$,
+en el que cada elemento es una clave y $d$ mide su disimilitud. Una función es
+una métrica si cumple no negatividad, identidad de los indiscernibles,
+simetría y desigualdad triangular. Esta última propiedad permite descartar
+subconjuntos de claves sin compararlas individualmente: si ya se conoce la
+distancia entre una consulta y un pivote, y también la distancia entre el
+pivote y una clave candidata, es posible establecer un intervalo de
+distancias en el que la candidata podría encontrarse
+\cite{chavez2001searching}. En este proyecto, las claves son palabras y la
+métrica será la distancia de Levenshtein, que corresponde al número mínimo de
+inserciones, eliminaciones y sustituciones necesarias para transformar una
+cadena en otra \cite{levenshtein1966binary}.
+
+Los algoritmos de búsqueda exacta no son suficientes cuando una consulta
+contiene errores ortográficos o no coincide literalmente con una palabra del
+diccionario. La búsqueda por proximidad permite recuperar la palabra más
+cercana, todas las palabras a distancia mínima o todas las palabras dentro de
+un radio determinado. Estas operaciones son relevantes en correctores
+ortográficos, autocompletado y recuperación de información
+\cite{navarro2001guided}. Su costo depende tanto del número de claves como de
+la distribución de las distancias; por ello, el análisis de la estructura del
+espacio métrico es tan importante como la implementación de la estructura de
+datos.
+
+\begin{itemize}[leftmargin=1.4em]
+  \item \textbf{Burkhard y Keller (1973).} Introducen la búsqueda de mejor
+  coincidencia sobre espacios métricos y la estructura de archivo 1, conocida
+  actualmente como BK-Tree. Su trabajo establece el uso de la desigualdad
+  triangular para podar ramas y constituye la referencia experimental
+  principal de esta propuesta \cite{burkhard1973}.
+  \item \textbf{Chávez et al. (2001).} Presentan una revisión de las
+  estructuras para espacios métricos y explican cómo la dimensión intrínseca y
+  la concentración de distancias pueden degradar su rendimiento. Este marco
+  permite interpretar el porcentaje de nodos examinados y no solo el tiempo
+  total de ejecución \cite{chavez2001searching}.
+  \item \textbf{Levenshtein (1966) y Navarro (2001).} Definen y analizan la
+  distancia de edición, así como técnicas para calcularla y utilizarla en
+  búsqueda aproximada de cadenas \cite{levenshtein1966binary,navarro2001guided}.
+  \item \textbf{Cormen et al. (2022).} Describen los principios de diseño y
+  análisis de algoritmos, incluyendo árboles, complejidad y evaluación
+  experimental; se utilizarán como apoyo para justificar las métricas del
+  proyecto \cite{cormen2022}.
+  \item \textbf{Real Academia Española y Asociación de Academias de la
+  Lengua Española.} El Diccionario de la lengua española será la fuente de
+  consulta para seleccionar y documentar las palabras del español empleadas
+  en los experimentos \cite{rae2026}.
+\end{itemize}
+
+\section{Planteamiento del problema y objetivos} 
+
+El proyecto tiene como objetivo general determinar cómo la distribución de
+distancias de Levenshtein y la estrategia de construcción afectan el
+porcentaje de nodos examinados por un BK-Tree construido sobre un diccionario
+del español. Para ello se realizará una réplica parcial y una extensión
+experimental de \emph{File Structure 1} y \emph{Search Algorithm 1} de
+Burkhard y Keller \cite{burkhard1973}, utilizando palabras del diccionario de
+la Real Academia Española \cite{rae2026} como claves.
+
+Los objetivos específicos son:
+
+\begin{enumerate}[leftmargin=1.4em]
+\item Implementar la distancia de Levenshtein, una búsqueda exhaustiva y un
+BK-Tree basado en la estructura de referencia.
+\item Medir y caracterizar la distribución de distancias de Levenshtein y las
+propiedades estructurales de los árboles construidos.
+\item Comparar una construcción base, dependiente del orden de inserción, con
+una estrategia alternativa de selección de pivotes.
+\item Evaluar el número de evaluaciones de distancia, el porcentaje de nodos
+examinados, los tiempos de construcción y búsqueda, y la correctitud de las
+consultas.
+\end{enumerate}
+
+Para cumplir estos objetivos se desarrollarán las siguientes actividades: 
+
+\begin{enumerate}[leftmargin=1.4em] 
+\item \textbf{Implementación de referencia.} Se implementará la distancia de Levenshtein, una búsqueda exhaustiva y una estructura basada en \emph{File Structure 1}. La búsqueda exhaustiva se utilizará tanto como línea base de rendimiento como mecanismo de validación de la correctitud. 
+
+\item \textbf{Operaciones de consulta.} Se implementará búsqueda de clase 1, que retorna una palabra a distancia mínima; búsqueda de clase 2, que retorna todas las palabras situadas a la distancia mínima; y, de forma separada, búsqueda por radio, que retorna las palabras cuya distancia a la consulta es menor o igual que un umbral dado. 
+
+\item \textbf{Caracterización experimental.} Se analizará, mediante muestreo, la distribución de distancias de Levenshtein. También se medirán propiedades de los árboles construidos, incluyendo profundidad, número de hijos por nodo, tamaño de subárboles y distribución de claves entre ramas. 
+
+\item \textbf{Extensión propuesta.} Se comparará una construcción base, dependiente de un orden aleatorio de inserción, con una estrategia de construcción que seleccione pivotes a partir de una muestra de claves. El objetivo será determinar si la estrategia alternativa reduce el porcentaje de nodos examinados sin afectar la correctitud de las consultas. 
+
+\item \textbf{Evaluación.} Las variantes serán evaluadas con los mismos diccionarios y consultas. Se medirán evaluaciones de distancia por consulta, porcentaje de nodos examinados, tiempo de construcción, tiempo de búsqueda y propiedades estructurales del árbol. Se reportarán media, desviación estándar, mínimo y máximo, siguiendo la lógica experimental del artículo base. 
+
+\end{enumerate}
+
+\section{Plan de trabajo}
+
+\begin{longtable}{p{1.5cm}p{3.5cm}p{9.2cm}}
+\toprule
+Semana & Foco & Actividades principales \\
+\midrule
+ \endfirsthead
+\toprule
+Semana & Foco & Actividades principales \\
+\midrule
+\endhead
+\midrule
+\multicolumn{3}{r}{\emph{Continúa en la siguiente página}} \\
+\endfoot
+\bottomrule
+\endlastfoot
+1 & Réplica y preparación de datos &
+Revisión detallada de Burkhard y Keller (1973) y de Ch\'avez et al. (2001); identificación de los elementos de \emph{File Structure 1} y \emph{Search Algorithm 1} que serán replicados; obtención, limpieza y preparación del diccionario del español; implementación y validación de la distancia de Levenshtein. \\
+
+2 & Implementación de referencia &
+Implementación de la búsqueda exhaustiva y del BK-Tree basado en \emph{File Structure 1}; implementación de las búsquedas de clase 1 y clase 2, además de la búsqueda por radio; desarrollo de pruebas unitarias para verificar la correctitud frente a la búsqueda exhaustiva. \\
+
+3 & Caracterización de la estructura &
+Caracterización experimental de la distribución de distancias de Levenshtein mediante muestreo; construcción de árboles con diferentes tamaños de diccionario y órdenes de inserción; medición de profundidad, número de hijos, tamaño de subárboles y distribución de claves entre ramas. \\
+
+4 & Extensión mediante selección de pivotes &
+\begin{itemize}[leftmargin=*, nosep]
+\item Diseñar e implementar una estrategia alternativa de construcción basada en la selección de pivotes a partir de una muestra de claves; definir el procedimiento de selección y los parámetros experimentales; validar la correctitud de la variante respecto de la implementación base.
+\item Redactar la metodología, la descripción de las implementaciones y el diseño experimental del informe.
+\end{itemize} \\
+
+5 & Evaluación comparativa &
+\begin{itemize}[leftmargin=*, nosep]
+\item Ejecutar los experimentos controlados; medir las evaluaciones de distancia, el porcentaje de nodos examinados, los tiempos de construcción y búsqueda, y las propiedades estructurales; realizar el análisis estadístico mediante media, desviación estándar, mínimo y máximo.
+\item Redactar los resultados, las conclusiones y la discusión final; revisar, editar y entregar el informe final.
+\end{itemize} \\
+\end{longtable}
+
+
+
+
+\section{Entregable esperado}
+
+\begin{itemize}[leftmargin=1.4em]
+
+  \item Una implementación reproducible de la distancia de Levenshtein, la búsqueda exhaustiva y un BK-Tree basado en \emph{File Structure 1} y \emph{Search Algorithm 1} de Burkhard y Keller (1973), utilizando como claves palabras de un diccionario del español.
+
+  \item Una implementación de las operaciones de consulta consideradas en el proyecto: búsqueda de clase 1, búsqueda de clase 2 y búsqueda por radio, junto con pruebas que verifiquen su correctitud mediante comparación con la búsqueda exhaustiva.
+
+  \item Un análisis experimental de la distribución de distancias de Levenshtein en el diccionario utilizado, acompañado de la caracterización estructural de los BK-Trees construidos, considerando profundidad, número de hijos, tamaño de subárboles y distribución de claves entre ramas.
+
+  \item Una implementación de al menos una estrategia alternativa de construcción basada en la selección de pivotes a partir de una muestra de claves, integrada sobre la misma estructura de BK-Tree utilizada en la implementación de referencia.
+
+  \item Un análisis de los resultados que permita determinar la relación entre la distribución de distancias de Levenshtein, la estrategia de construcción y el porcentaje de nodos examinados durante las consultas, verificando además que las posibles mejoras de eficiencia no afecten la correctitud de las búsquedas.
+
+\end{itemize}
+
+\section{Referencias}
+
+\begin{thebibliography}{99}
+
+\bibitem{burkhard1973}
+Burkhard, W. A., y Keller, R. M. (1973).
+\emph{Some approaches to best-match file searching}.
+Communications of the ACM, 16(4), 230--236.
+\url{https://doi.org/10.1145/362003.362025}
+
+\bibitem{chavez2001searching}
+Chávez, E., Navarro, G., Baeza-Yates, R., y Marroquín, J. L. (2001).
+\emph{Searching in metric spaces}.
+ACM Computing Surveys, 33(3), 273--321.
+\url{https://doi.org/10.1145/502807.502808}
+
+\bibitem{levenshtein1966binary}
+Levenshtein, V. I. (1966).
+Binary codes capable of correcting deletions, insertions, and reversals.
+\emph{Soviet Physics Doklady, 10}, 707--710.
+
+\bibitem{navarro2001guided}
+Navarro, G. (2001).
+A guided tour to approximate string matching.
+\emph{ACM Computing Surveys, 33(1), 31--88}.
+\url{https://doi.org/10.1145/375360.375365}
+
+\bibitem{cormen2022}
+Cormen, T. H., Leiserson, C. E., Rivest, R. L., y Stein, C. (2022).
+\emph{Introduction to Algorithms} (4.ª ed.).
+MIT Press.
+
+\bibitem{rae2026}
+Real Academia Española y Asociación de Academias de la Lengua Española.
+(2026). \emph{Diccionario de la lengua española} (versión en línea).
+\url{https://dle.rae.es/}
+
+\end{thebibliography}
+
+\end{document}
