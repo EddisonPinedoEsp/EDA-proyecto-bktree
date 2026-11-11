@@ -11,12 +11,17 @@ add_compile_options(-Wall -Wextra)
 add_library(bktree_lib
   src/core/text_utils.cpp
   src/core/levenshtein.cpp
+  src/core/dictionary.cpp
+  src/builders/orden.cpp
   src/baseline/exhaustive.cpp
   src/bktree/bktree.cpp)
 target_include_directories(bktree_lib PUBLIC src)
 
+add_executable(caracterizacion src/experiments/caracterizacion.cpp)
+target_link_libraries(caracterizacion bktree_lib)
+
 enable_testing()
-foreach(t test_levenshtein test_bktree)
+foreach(t test_levenshtein test_bktree test_estructura)
   add_executable(${t} tests/${t}.cpp)
   target_link_libraries(${t} bktree_lib)
   add_test(NAME ${t} COMMAND ${t})

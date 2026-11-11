@@ -6,9 +6,11 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <iostream>
+using namespace std;
 
-static bool iguales(const std::vector<ResultadoBusqueda> &a,
-                    const std::vector<ResultadoBusqueda> &b) {
+static bool iguales(const vector<ResultadoBusqueda> &a,
+                    const vector<ResultadoBusqueda> &b) {
   if (a.size() != b.size()) return false;
   for (size_t i = 0; i < a.size(); ++i)
     if (a[i].palabra != b[i].palabra || a[i].frecuencia != b[i].frecuencia ||
@@ -18,7 +20,7 @@ static bool iguales(const std::vector<ResultadoBusqueda> &a,
 }
 
 static void comparar(const BKTree &t, const BusquedaExhaustiva &e,
-                     const std::string &q, int maxRadio) {
+                     const string &q, int maxRadio) {
   for (int r = 0; r <= maxRadio; ++r)
     CHECK(iguales(t.busquedaRadio(q, r), e.busquedaRadio(q, r)));
   CHECK(iguales(t.claseDos(q), e.claseDos(q)));
@@ -69,10 +71,10 @@ static void casosBorde() {
 }
 
 static void aleatorio() {
-  std::mt19937 rng(42);
-  const std::u32string alf = U"abcdeáñ";
-  auto utf8 = [](const std::u32string &s) {
-    std::string o;
+  mt19937 rng(42);
+  const u32string alf = U"abcdeáñ";
+  auto utf8 = [](const u32string &s) {
+    string o;
     for (char32_t c : s) {
       if (c < 0x80) o.push_back((char)c);
       else { o.push_back((char)(0xC0 | (c >> 6))); o.push_back((char)(0x80 | (c & 0x3F))); }
@@ -80,7 +82,7 @@ static void aleatorio() {
     return o;
   };
   auto palabra = [&] {
-    std::u32string s;
+    u32string s;
     int n = 1 + rng() % 7;
     for (int i = 0; i < n; ++i) s.push_back(alf[rng() % alf.size()]);
     return utf8(s);
@@ -90,7 +92,7 @@ static void aleatorio() {
     BusquedaExhaustiva e;
     int n = 50 + 300 * ronda;
     for (int i = 0; i < n; ++i) {
-      std::string w = palabra();
+      string w = palabra();
       long long f = 1 + rng() % 5;  // pocas frecuencias para forzar empates
       CHECK(t.insertar(w, f) == e.insertar(w, f));
     }

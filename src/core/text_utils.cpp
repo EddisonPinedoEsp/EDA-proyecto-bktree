@@ -1,16 +1,18 @@
 #include "text_utils.hpp"
+#include <iostream>
 
+using namespace std;
 
-std::string recortar(const std::string& texto) {
+string recortar(const string& texto) {
 	size_t inicio = texto.find_first_not_of(" \t\r\n");
-	if (inicio == std::string::npos) return "";
+	if (inicio == string::npos) return "";
 
 	size_t fin = texto.find_last_not_of(" \t\r\n");
 	return texto.substr(inicio, fin - inicio + 1);
 }
 
-std::string aMinusculasEspanolUtf8Basico(const std::string& texto) {
-	std::string resultado = texto;
+string aMinusculasEspanolUtf8Basico(const string& texto) {
+	string resultado = texto;
 
 	for (char& caracter : resultado) {
 		if (caracter >= 'A' && caracter <= 'Z') {
@@ -39,8 +41,8 @@ std::string aMinusculasEspanolUtf8Basico(const std::string& texto) {
 	return resultado;
 }
 
-std::u32string utf8ACodepoints(const std::string& texto) {
-	std::u32string resultado;
+u32string utf8ACodepoints(const string& texto) {
+	u32string resultado;
 
 	for (size_t indice = 0; indice < texto.size();) {
 		unsigned char caracter = static_cast<unsigned char>(texto[indice]);
@@ -72,4 +74,26 @@ std::u32string utf8ACodepoints(const std::string& texto) {
 	}
 
 	return resultado;
+}
+
+string codepointsAUtf8(const u32string &texto) {
+  string r;
+  for (char32_t c : texto) {
+    if (c < 0x80) {
+      r.push_back(static_cast<char>(c));
+    } else if (c < 0x800) {
+      r.push_back(static_cast<char>(0xC0 | (c >> 6)));
+      r.push_back(static_cast<char>(0x80 | (c & 0x3F)));
+    } else if (c < 0x10000) {
+      r.push_back(static_cast<char>(0xE0 | (c >> 12)));
+      r.push_back(static_cast<char>(0x80 | ((c >> 6) & 0x3F)));
+      r.push_back(static_cast<char>(0x80 | (c & 0x3F)));
+    } else {
+      r.push_back(static_cast<char>(0xF0 | (c >> 18)));
+      r.push_back(static_cast<char>(0x80 | ((c >> 12) & 0x3F)));
+      r.push_back(static_cast<char>(0x80 | ((c >> 6) & 0x3F)));
+      r.push_back(static_cast<char>(0x80 | (c & 0x3F)));
+    }
+  }
+  return r;
 }

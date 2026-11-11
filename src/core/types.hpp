@@ -2,14 +2,17 @@
 #define BKTREE_TYPES_HPP
 
 #include <string>
+#include <iostream>
+
+using namespace std;
 
 struct InfoPalabra {
-  std::string palabra;
+  string palabra;
   long long frecuencia;
 };
 
 struct ResultadoBusqueda {
-  std::string palabra;
+  string palabra;
   long long frecuencia;
   int distancia;
 };

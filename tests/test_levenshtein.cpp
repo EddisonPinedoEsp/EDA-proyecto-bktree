@@ -6,15 +6,18 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <iostream>
+
+using namespace std;
 
 // Oráculo independiente: matriz completa (sin optimización de memoria).
-static int referencia(const std::u32string &a, const std::u32string &b) {
-  std::vector<std::vector<int>> D(a.size() + 1, std::vector<int>(b.size() + 1));
+static int referencia(const u32string &a, const u32string &b) {
+  vector<vector<int>> D(a.size() + 1, vector<int>(b.size() + 1));
   for (size_t i = 0; i <= a.size(); ++i) D[i][0] = (int)i;
   for (size_t j = 0; j <= b.size(); ++j) D[0][j] = (int)j;
   for (size_t i = 1; i <= a.size(); ++i)
     for (size_t j = 1; j <= b.size(); ++j)
-      D[i][j] = std::min({D[i - 1][j] + 1, D[i][j - 1] + 1,
+      D[i][j] = min({D[i - 1][j] + 1, D[i][j - 1] + 1,
                           D[i - 1][j - 1] + (a[i - 1] != b[j - 1])});
   return D[a.size()][b.size()];
 }
@@ -46,10 +49,10 @@ int main() {
   CHECK(recortar(" \t ").empty());
 
   // Propiedades métricas y equivalencia con el oráculo (semilla fija).
-  std::mt19937 rng(42);
-  const std::u32string alfabeto = U"abcáñ";
+  mt19937 rng(42);
+  const u32string alfabeto = U"abcáñ";
   auto aleatoria = [&] {
-    std::u32string s;
+    u32string s;
     int n = rng() % 8;
     for (int i = 0; i < n; ++i) s.push_back(alfabeto[rng() % alfabeto.size()]);
     return s;

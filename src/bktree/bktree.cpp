@@ -7,20 +7,23 @@
 #include <climits>
 #include <unordered_map>
 #include <vector>
+#include <iostream>
+
+using namespace std;
 
 struct BKTree::Nodo {
-  std::string palabra;
-  std::u32string codepoints;
+  string palabra;
+  u32string codepoints;
   long long frecuencia;
-  std::unordered_map<int, Nodo *> hijos;
+  unordered_map<int, Nodo *> hijos;
 
-  Nodo(const std::string &p, long long f)
+  Nodo(const string &p, long long f)
       : palabra(p), codepoints(utf8ACodepoints(p)), frecuencia(f) {}
 };
 
 BKTree::~BKTree() {
   // Iterativo: evita desbordar la pila en árboles profundos.
-  std::vector<Nodo *> pila;
+  vector<Nodo *> pila;
   if (raiz_) pila.push_back(raiz_);
   while (!pila.empty()) {
     Nodo *n = pila.back();
@@ -30,13 +33,13 @@ BKTree::~BKTree() {
   }
 }
 
-bool BKTree::insertar(const std::string &palabra, long long frecuencia) {
+bool BKTree::insertar(const string &palabra, long long frecuencia) {
   if (!raiz_) {
     raiz_ = new Nodo(palabra, frecuencia);
     ++tamano_;
     return true;
   }
-  const std::u32string cp = utf8ACodepoints(palabra);
+  const u32string cp = utf8ACodepoints(palabra);
   Nodo *actual = raiz_;
   while (true) {
     int d = distanciaLevenshtein(cp, actual->codepoints);
@@ -51,8 +54,8 @@ bool BKTree::insertar(const std::string &palabra, long long frecuencia) {
   }
 }
 
-void BKTree::buscarRadio(const Nodo *nodo, const std::u32string &q, int radio,
-                         std::vector<ResultadoBusqueda> &res,
+void BKTree::buscarRadio(const Nodo *nodo, const u32string &q, int radio,
+                         vector<ResultadoBusqueda> &res,
                          EstadisticasBusqueda *est) const {
   int d = distanciaLevenshtein(q, nodo->codepoints);
   if (est) { ++est->distancias; ++est->nodosExaminados; }
@@ -65,8 +68,8 @@ void BKTree::buscarRadio(const Nodo *nodo, const std::u32string &q, int radio,
 
 // Radio dinámico: `mejor` baja cuando se hallan candidatos más cercanos, y el
 // intervalo de poda se evalúa con el valor vigente en cada hijo.
-void BKTree::buscarMinimo(const Nodo *nodo, const std::u32string &q,
-                          int &mejor, std::vector<ResultadoBusqueda> &res,
+void BKTree::buscarMinimo(const Nodo *nodo, const u32string &q,
+                          int &mejor, vector<ResultadoBusqueda> &res,
                           EstadisticasBusqueda *est) const {
   int d = distanciaLevenshtein(q, nodo->codepoints);
   if (est) { ++est->distancias; ++est->nodosExaminados; }
@@ -78,28 +81,72 @@ void BKTree::buscarMinimo(const Nodo *nodo, const std::u32string &q,
       buscarMinimo(h.second, q, mejor, res, est);
 }
 
-std::vector<ResultadoBusqueda>
-BKTree::busquedaRadio(const std::string &consulta, int radio,
+vector<ResultadoBusqueda>
+BKTree::busquedaRadio(const string &consulta, int radio,
                       EstadisticasBusqueda *est) const {
-  std::vector<ResultadoBusqueda> res;
+  vector<ResultadoBusqueda> res;
   if (raiz_ && radio >= 0)
     buscarRadio(raiz_, utf8ACodepoints(consulta), radio, res, est);
-  std::sort(res.begin(), res.end(), mejorResultado);
+  sort(res.begin(), res.end(), mejorResultado);
   return res;
 }
 
-std::vector<ResultadoBusqueda>
-BKTree::claseDos(const std::string &consulta, EstadisticasBusqueda *est) const {
-  std::vector<ResultadoBusqueda> res;
+vector<ResultadoBusqueda>
+BKTree::claseDos(const string &consulta, EstadisticasBusqueda *est) const {
+  vector<ResultadoBusqueda> res;
   int mejor = INT_MAX / 2;  // evita desbordar d + mejor
   if (raiz_) buscarMinimo(raiz_, utf8ACodepoints(consulta), mejor, res, est);
-  std::sort(res.begin(), res.end(), mejorResultado);
+  sort(res.begin(), res.end(), mejorResultado);
   return res;
 }
 
-std::optional<ResultadoBusqueda>
-BKTree::claseUno(const std::string &consulta, EstadisticasBusqueda *est) const {
+optional<ResultadoBusqueda>
+BKTree::claseUno(const string &consulta, EstadisticasBusqueda *est) const {
   auto res = claseDos(consulta, est);
-  if (res.empty()) return std::nullopt;
+  if (res.empty()) return nullopt;
   return res.front();
+}
+
+EstructuraArbol BKTree::analizarEstructura() const {
+  EstructuraArbol e;
+  if (!raiz_) return e;
+
+  long long sumaProf = 0, sumaHijosInternos = 0, internos = 0;
+  std::vector<std::pair<const Nodo *, int>> pila{{raiz_, 0}};
+  while (!pila.empty()) {
+    auto [n, prof] = pila.back();
+    pila.pop_back();
+    ++e.nodos;
+    sumaProf += prof;
+    e.profundidadMaxima = std::max(e.profundidadMaxima, prof);
+    int grado = static_cast<int>(n->hijos.size());
+    ++e.histGrados[grado];
+    e.gradoMaximo = std::max(e.gradoMaximo, grado);
+    if (grado == 0) {
+      ++e.hojas;
+    } else {
+      ++internos;
+      sumaHijosInternos += grado;
+    }
+    for (const auto &h : n->hijos) {
+      ++e.histEtiquetas[h.first];
+      pila.push_back({h.second, prof + 1});
+    }
+  }
+  e.profundidadMedia = static_cast<double>(sumaProf) / e.nodos;
+  if (internos) e.gradoMedioInternos = static_cast<double>(sumaHijosInternos) / internos;
+
+  for (const auto &h : raiz_->hijos) {
+    size_t tam = 0;
+    std::vector<const Nodo *> st{h.second};
+    while (!st.empty()) {
+      const Nodo *n = st.back();
+      st.pop_back();
+      ++tam;
+      for (const auto &c : n->hijos) st.push_back(c.second);
+    }
+    e.subarbolesRaiz.push_back({h.first, tam});
+  }
+  std::sort(e.subarbolesRaiz.begin(), e.subarbolesRaiz.end());
+  return e;
 }
